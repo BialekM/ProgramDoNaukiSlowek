@@ -35,7 +35,7 @@ namespace ProgramDoNaukiSlowek
             myfile = new MyFile();
             this.Dispose();
             SingleWord.ListOfWords = myfile.CreatelistOfWords(2);
-            myfile.LoadListOfWord();
+            myfile.LoadListOfWord(SingleWord.ListOfWords);
             singleWordWindow = new SingleWord();
             singleWordWindow.Show();
         }

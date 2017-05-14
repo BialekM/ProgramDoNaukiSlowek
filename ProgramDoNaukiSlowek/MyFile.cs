@@ -1,22 +1,20 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 
 namespace ProgramDoNaukiSlowek
 {
     class MyFile
     {
-        Encoding enc = Encoding.GetEncoding("Windows-1250");
-        readonly string sourcePath = (AppDomain.CurrentDomain.BaseDirectory+"/slowka.txt");
-        readonly string saveSourcePath = (AppDomain.CurrentDomain.BaseDirectory + "/slowkaZapisane.txt");
-        public List<Word> listOfWords = new List<Word>();
-        private StreamWriter streamWriter;
-        private StreamReader streamReader;
-        private SingleWord singleWord;
-        public MyFile()
-        {
-        }
+        private Encoding enc = Encoding.GetEncoding("Windows-1250");
+
+        readonly string sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "slowka.txt");
+        readonly string saveSourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "slowkaZapisane.txt");
+
+        private List<Word> listOfWords = new List<Word>();
 
         public List<Word> CreatelistOfWords(int numberOfReply)
         {
@@ -24,122 +22,64 @@ namespace ProgramDoNaukiSlowek
             {
                 File.Create(sourcePath);
             }
-            StreamReader streamReader = new StreamReader(sourcePath, enc);
-            string linia = "cokolwiek";
-            int j = 0;
-            bool isPolish = true;
-            while (linia != null)
+
+            using (StreamReader streamReader = new StreamReader(sourcePath, enc))
             {
-                List<string> listOfPolishNames = new List<string>();
-                List<string> listOfEnglishNames = new List<string>();
+                string linia = streamReader.ReadLine();
 
-                Word word;
-                string polishWord = null;
-                string englishWord = null;
-                j = 0;
-                isPolish = true;
-                linia = streamReader.ReadLine();
-                if (linia == null)
+                while (linia != null)
                 {
-                    return listOfWords;
-                }
-                int liniaLength = linia.Length;
-                for (int i = 0; i < linia.Length; i++)
-                {
-                    char temp = linia[i];
-                    if (linia[i].ToString().Equals("-"))
-                    {
-                        for (int counter = j; counter < i; counter++)
-                        {
-                            string temp1 = linia[counter].ToString();
-                            if (!(linia[counter].ToString().Equals(",")) && !(linia[counter].ToString().Equals("-")))
-                            {
-                                polishWord = polishWord + linia[counter];
-                            }
+                    Word word = GetWordFromString(linia, numberOfReply);
 
-                        }
-                        listOfPolishNames.Add(polishWord);
-                        polishWord = null;
-                        isPolish = false;
-                        j = i;
-                    }
-
-                    if ((linia[i].ToString().Equals(",") && isPolish == true))
+                    if (word != null)
                     {
-                        for (int counter = j; counter < i; counter++)
-                        {
-                            if (!(linia[counter].ToString().Equals(",")) && !(linia[counter].ToString().Equals("-")))
-                            {
-                                polishWord = polishWord + linia[counter];
-                            }
-                        }
-                        listOfPolishNames.Add(polishWord);
-                        polishWord = null;
-                        j = i;
-                    }
-                    if (linia[i].ToString().Equals(",") && isPolish == false)
-                    {
-                        for (int counter = j; counter < i; counter++)
-                        {
-                            if (!(linia[counter].ToString().Equals(",")) && !(linia[counter].ToString().Equals("-")))
-                            {
-                                englishWord = englishWord + linia[counter];
-                            }
-
-                        }
-                        listOfEnglishNames.Add(englishWord);
-                        englishWord = null;
-                        j = i;
-                    }
-
-                    if (linia[i].ToString().Equals("."))
-                    {
-                        for (int counter = j; counter < i; counter++)
-                        {
-                            if (!(linia[counter].ToString().Equals(",")) && !(linia[counter].ToString().Equals("-")))
-                            {
-                                englishWord = englishWord + linia[counter];
-                            }
-                        }
-                        listOfEnglishNames.Add(englishWord);
-                        word = new Word(listOfPolishNames, listOfEnglishNames, numberOfReply);
                         listOfWords.Add(word);
                     }
+
+                    linia = streamReader.ReadLine();
                 }
             }
-            streamReader.Close();
+
             return listOfWords;
         }
 
-        public void SaveListOfWord()
+        private Word GetWordFromString(string line, int numberOfReply)
         {
-            if (!File.Exists(sourcePath))
+            try
             {
-                File.Create(sourcePath);
+                //aa,bb-cc,dd => word("aa,bb","cc,dd",numberOfReply)
+                String[] wordsArray = line.Split('-');
+                return new Word(wordsArray[0].Split(',').ToList(), wordsArray[1].Split(',').ToList(), numberOfReply);
+
             }
-            streamWriter = new StreamWriter(saveSourcePath, false);
-            streamWriter.Flush();
-            foreach (Word t in SingleWord.ListOfWords)
+            catch (Exception exc)
             {
-                streamWriter.WriteLine(t.Counter);
+                MessageBox.Show("Error while parsing line:" + line + ". Exc:" + exc.Message);
+                return null;
             }
-            streamWriter.Close();
         }
 
-        public void LoadListOfWord()
+        public void SaveListOfWord(List<Word> words)
         {
-            streamReader = new StreamReader(saveSourcePath,enc);
-            if (!File.Exists(sourcePath))
+            using (var streamWriter = new StreamWriter(saveSourcePath, false))
             {
-                File.Create(sourcePath);
+                foreach (Word t in words)
+                {
+                    streamWriter.WriteLine(t.Counter);
+                }
             }
-            for (int i = 0; i < SingleWord.ListOfWords.Count; i++)
+        }
+
+        public void LoadListOfWord(List<Word> words)
+        {
+            using (var streamReader = new StreamReader(saveSourcePath, enc))
             {
-                string line = streamReader.ReadLine();
-                SingleWord.ListOfWords[i].Counter=Int32.Parse(line);
+                for (int i = 0; i < words.Count; i++)
+                {
+                    string line = streamReader.ReadLine();
+                    words[i].Counter = Int32.Parse(line);
+                }
             }
-            streamReader.Close();       
         }
     }
-
 }

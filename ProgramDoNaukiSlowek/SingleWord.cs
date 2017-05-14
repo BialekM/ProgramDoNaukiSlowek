@@ -176,13 +176,13 @@ namespace ProgramDoNaukiSlowek
         private void SaveToFile_Click(object sender, EventArgs e)
         {
             MyFile file = new MyFile();
-            file.SaveListOfWord();
+            file.SaveListOfWord(ListOfWords);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             MyFile file = new MyFile();
-            file.SaveListOfWord();
+            file.SaveListOfWord(ListOfWords);
             Application.Exit();
 
         }
